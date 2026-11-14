@@ -211,9 +211,9 @@ public static class NativeOverlay
         int S(int v) => (int)Math.Round(v * _scale);
 
         CreateFonts();
-        _brushBg = CreateSolidBrush(Rgb(18, 18, 22));
-        _brushBorder = CreateSolidBrush(Rgb(58, 58, 66));
-        _brushLine = CreateSolidBrush(Rgb(44, 44, 52));
+        _brushBg = CreateSolidBrush(Rgb(18, 18, 18));
+        _brushBorder = CreateSolidBrush(Rgb(59, 59, 59));
+        _brushLine = CreateSolidBrush(Rgb(45, 45, 45));
 
         var hInstance = GetModuleHandleW(null);
         _wndProc = WndProc;
@@ -551,27 +551,27 @@ public static class NativeOverlay
             DeleteObject(border);
 
             // Header
-            Text(hdc, _fontHeader, Rgb(150, 150, 162), Header, x, y, right, y + _headerH);
+            Text(hdc, _fontHeader, Rgb(151, 151, 151), Header, x, y, right, y + _headerH);
             if (v.Badge != null)
             {
-                Text(hdc, _fontHeader, Rgb(96, 214, 128), v.Badge, x, y, _lockRect.Left - S(6), y + _headerH, DT_RIGHT);
+                Text(hdc, _fontHeader, Rgb(169, 169, 169), v.Badge, x, y, _lockRect.Left - S(6), y + _headerH, DT_RIGHT);
             }
             // Lock button (Segoe MDL2 Assets: E785 = open padlock, E72E = closed padlock).
             SelectObject(hdc, _fontIcon);
-            SetTextColor(hdc, _locked ? Rgb(96, 96, 106) : Rgb(200, 200, 208));
+            SetTextColor(hdc, _locked ? Rgb(97, 97, 97) : Rgb(201, 201, 201));
             var lr = _lockRect;
             DrawTextW(hdc, _locked ? "" : "", -1, ref lr, DT_SINGLELINE | DT_CENTER | DT_VCENTER | DT_NOPREFIX);
             y += _headerH + S(6);
 
             // Counters: total | match in progress
             var x2 = x + _col1W + S(ColGap);
-            Text(hdc, _fontBig, Rgb(242, 184, 75), v.Total, x - S(1), y, x + _col1W + S(4), y + _bigH);
-            Text(hdc, _fontBig, v.Current == null ? Rgb(80, 80, 92) : v.CurrentLive ? Rgb(110, 224, 150) : Rgb(226, 226, 232), v.Current ?? "—", x2 - S(1), y, right + S(4), y + _bigH);
+            Text(hdc, _fontBig, Rgb(189, 189, 189), v.Total, x - S(1), y, x + _col1W + S(4), y + _bigH);
+            Text(hdc, _fontBig, v.Current == null ? Rgb(81, 81, 81) : v.CurrentLive ? Rgb(181, 181, 181) : Rgb(227, 227, 227), v.Current ?? "—", x2 - S(1), y, right + S(4), y + _bigH);
             var sep = new RECT { Left = x + _col1W + S(ColGap) / 2, Top = y + S(8), Right = x + _col1W + S(ColGap) / 2 + 1, Bottom = y + _bigH + _captionH };
             FillRect(hdc, ref sep, _brushLine);
             y += _bigH;
-            Text(hdc, _fontCaption, Rgb(130, 130, 142), CaptionTotal, x, y, x + _col1W + S(4), y + _captionH);
-            Text(hdc, _fontCaption, Rgb(130, 130, 142), v.CurrentCaption, x2, y, right + S(4), y + _captionH);
+            Text(hdc, _fontCaption, Rgb(131, 131, 131), CaptionTotal, x, y, x + _col1W + S(4), y + _captionH);
+            Text(hdc, _fontCaption, Rgb(131, 131, 131), v.CurrentCaption, x2, y, right + S(4), y + _captionH);
             y += _captionH + S(12);
 
             if (v.Rows.Count > 0)
@@ -581,13 +581,13 @@ public static class NativeOverlay
                 y += 1 + S(10);
                 foreach (var row in v.Rows)
                 {
-                    Text(hdc, _fontLabel, Rgb(130, 130, 142), row.Label, x, y, x + _labelW, y + _rowH);
+                    Text(hdc, _fontLabel, Rgb(131, 131, 131), row.Label, x, y, x + _labelW, y + _rowH);
                     var vx = x + _labelW + S(12);
-                    Text(hdc, _fontSmall, row.Treasure ? Rgb(196, 160, 255) : Rgb(226, 226, 232), row.Value, vx, y, right + S(4), y + _rowH);
+                    Text(hdc, _fontSmall, row.Treasure ? Rgb(182, 182, 182) : Rgb(227, 227, 227), row.Value, vx, y, right + S(4), y + _rowH);
                     if (row.Detail != null)
                     {
                         var dx = vx + TextWidth(hdc, _fontSmall, row.Value, out _) + S(6);
-                        Text(hdc, _fontCaption, Rgb(130, 130, 142), row.Detail, dx, y, right + S(4), y + _rowH - S(2), DT_BOTTOM);
+                        Text(hdc, _fontCaption, Rgb(131, 131, 131), row.Detail, dx, y, right + S(4), y + _rowH - S(2), DT_BOTTOM);
                     }
                     y += _rowH + S(4);
                 }
@@ -673,7 +673,7 @@ public static class NativeOverlay
     {
         SelectObject(hdc, font);
         var o = thin ? 1 : Math.Max(1, Sc(1.6));
-        SetTextColor(hdc, Rgb(11, 15, 24));
+        SetTextColor(hdc, Rgb(15, 15, 15));
         for (var dx = -o; dx <= o; dx++)
         {
             for (var dy = -o; dy <= o + 1; dy++)
@@ -751,13 +751,13 @@ public static class NativeOverlay
     {
         if (value.Length == 0)
         {
-            Outlined(hdc, _fontHudSmall, Rgb(255, 233, 166), label, left, top, right, top + height, DT_RIGHT, thin: true);
+            Outlined(hdc, _fontHudSmall, Rgb(232, 232, 232), label, left, top, right, top + height, DT_RIGHT, thin: true);
             return right - TextWidth(hdc, _fontHudSmall, label, out _);
         }
         var valueW = TextWidth(hdc, _fontHudSmall, value, out _);
         Outlined(hdc, _fontHudSmall, valueColor, value, left, top, right, top + height, DT_RIGHT, thin: true);
         var labelRight = right - valueW;
-        Outlined(hdc, _fontHudSmall, Rgb(255, 233, 166), label + Sep, left, top, labelRight, top + height, DT_RIGHT, thin: true);
+        Outlined(hdc, _fontHudSmall, Rgb(232, 232, 232), label + Sep, left, top, labelRight, top + height, DT_RIGHT, thin: true);
         return labelRight - TextWidth(hdc, _fontHudSmall, label + Sep, out _);
     }
 
@@ -772,14 +772,14 @@ public static class NativeOverlay
         var pad = Sc(8);
         var right = rc.Right - pad - Sc(12); // italic glyphs and their outline lean past the measured width
         var white = Rgb(255, 255, 255);
-        var gold = Rgb(255, 210, 63);
-        var ink = Rgb(11, 15, 24);
+        var gold = Rgb(207, 207, 207);
+        var ink = Rgb(15, 15, 15);
 
         // Unlocked: a dark backdrop to grab it, and the padlock (locked, only the figures remain, mouse goes through).
         if (!_locked)
         {
-            var pen = CreatePen(0, 1, Rgb(58, 66, 86));
-            var brush = CreateSolidBrush(Rgb(28, 34, 48));
+            var pen = CreatePen(0, 1, Rgb(66, 66, 66));
+            var brush = CreateSolidBrush(Rgb(34, 34, 34));
             var oldPen = SelectObject(hdc, pen);
             var old = SelectObject(hdc, brush);
             RoundRect(hdc, 0, 0, rc.Right, rc.Bottom, Sc(12), Sc(12));
@@ -788,7 +788,7 @@ public static class NativeOverlay
             DeleteObject(brush);
             DeleteObject(pen);
             SelectObject(hdc, _fontIcon);
-            SetTextColor(hdc, Rgb(200, 200, 208));
+            SetTextColor(hdc, Rgb(201, 201, 201));
             var lr = _lockRect;
             DrawTextW(hdc, "", -1, ref lr, DT_SINGLELINE | DT_CENTER | DT_VCENTER | DT_NOPREFIX);
         }
@@ -804,7 +804,7 @@ public static class NativeOverlay
         var iw = Sc(26);
         var ih = Sc(22);
         var ix = right - bigW - Sc(8) - iw;
-        Chest(hdc, ix, y + (_hudBigH - ih) / 2, iw, ih, gold, Rgb(224, 165, 38), ink, ink);
+        Chest(hdc, ix, y + (_hudBigH - ih) / 2, iw, ih, gold, Rgb(168, 168, 168), ink, ink);
         if (v.CurrentLive)
         {
             var d = Sc(11);
@@ -824,8 +824,8 @@ public static class NativeOverlay
             y += rowH + Sc(2);
         }
         var tw = TextWidth(hdc, _fontHudSmall, v.Treasures, out _);
-        Outlined(hdc, _fontHudSmall, Rgb(214, 190, 255), v.Treasures, left, y, right, y + rowH, DT_RIGHT, thin: true);
-        Star(hdc, right - tw - Sc(12), y + rowH / 2, Sc(8), Rgb(196, 155, 255), ink);
+        Outlined(hdc, _fontHudSmall, Rgb(205, 205, 205), v.Treasures, left, y, right, y + rowH, DT_RIGHT, thin: true);
+        Star(hdc, right - tw - Sc(12), y + rowH / 2, Sc(8), Rgb(179, 179, 179), ink);
     }
 
     private static uint Rgb(byte r, byte g, byte b) => (uint)(r | (g << 8) | (b << 16));
