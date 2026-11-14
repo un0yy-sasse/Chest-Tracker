@@ -18,7 +18,7 @@ namespace ChestCounter;
 [SupportedOSPlatform("windows")]
 public static class GuiWindow
 {
-    private static readonly System.Drawing.Color Night = System.Drawing.Color.FromArgb(0, 0, 0);
+    private static readonly System.Drawing.Color Night = System.Drawing.Color.FromArgb(10, 12, 17);
 
     private static Form? _form;
     private static WebView2? _view;
