@@ -349,7 +349,7 @@ def test_a_broken_sound_system_does_not_stop_counting(window):
 def test_overlay_size_and_opacity_apply_and_are_saved(window):
     window.set_overlay_scale(1.5)
     window.set_overlay_opacity(0.6)
-    assert window.overlay.width() == round(220 * 1.5) and window.overlay.height() == round(76 * 1.5)
+    assert window.overlay.width() == round(236 * 1.5) and window.overlay.height() == round(118 * 1.5)
     assert window.overlay.opacity == 0.6
     assert window.settings["overlay_scale"] == 1.5
     assert window.settings["overlay_opacity"] == 0.6

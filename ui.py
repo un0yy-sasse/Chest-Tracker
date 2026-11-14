@@ -41,7 +41,7 @@ from widgets import (
     ChestStage, DailyBars, LeaderRow, MatchMeter, NavButton, StepBadge,
 )
 
-APP_VERSION = "1.0.1"
+APP_VERSION = "1.0.2"
 
 log = logging.getLogger("chest-tracker")
 
@@ -824,21 +824,26 @@ class SetupPage(QWidget):
             layout.addWidget(step)
 
         layout.addSpacing(12)
-        layout.addWidget(label("In-game overlay", "subheading"))
+        layout.addWidget(label("Mini window", "subheading"))
         layout.addWidget(label(
-            "Show your live chest count over Fortnite. Turn on positioning to drag the badge somewhere "
-            "that does not cover your HUD, then finish positioning before you play.",
+            "A small counter that stays on top of everything, in the top-right corner by default. "
+            "Click its lock to unlock it, drag it where you like, then lock it again. While Fortnite is in "
+            "front, clicks pass straight through it. Right-click it for more options.",
             "muted", wrap=True,
         ))
         overlay_row = QHBoxLayout()
-        self.overlay_enabled = QCheckBox("Show the chest count over Fortnite")
+        self.overlay_enabled = QCheckBox("Show the mini window")
         self.overlay_enabled.setChecked(settings["overlay_enabled"])
         self.overlay_enabled.toggled.connect(window.set_overlay_enabled)
         overlay_row.addWidget(self.overlay_enabled, 1)
-        self.overlay_position = QPushButton("Set overlay position")
+        self.overlay_position = QPushButton("Set position")
         self.overlay_position.clicked.connect(self._toggle_overlay_position)
         overlay_row.addWidget(self.overlay_position)
         layout.addLayout(overlay_row)
+        self.overlay_game_only = QCheckBox("Only show it while Fortnite is in front")
+        self.overlay_game_only.setChecked(bool(settings["overlay_game_only"]))
+        self.overlay_game_only.toggled.connect(window.set_overlay_game_only)
+        layout.addWidget(self.overlay_game_only)
         self.size_slider, self.size_text = self._option_slider(
             layout, "Size", 100 * MIN_SCALE, 100 * MAX_SCALE,
             100 * clamp(settings["overlay_scale"], MIN_SCALE, MAX_SCALE, 1.0), "{}%", self._save_overlay_scale,
@@ -848,7 +853,7 @@ class SetupPage(QWidget):
             100 * clamp(settings["overlay_opacity"], MIN_OPACITY, MAX_OPACITY, 1.0), "{}%", self._save_overlay_opacity,
         )
         layout.addWidget(label(
-            "Use Set overlay position to see the badge while you adjust size and opacity.", "small", wrap=True,
+            "Size and opacity apply right away. Double-click the mini window to open this app.", "small", wrap=True,
         ))
 
         layout.addSpacing(12)
@@ -919,7 +924,7 @@ class SetupPage(QWidget):
     def _toggle_overlay_position(self) -> None:
         self.window_.toggle_overlay_positioning()
         self.overlay_position.setText(
-            "Done positioning" if self.window_._overlay_positioning else "Set overlay position"
+            "Done positioning" if self.window_._overlay_positioning else "Set position"
         )
 
     def refresh_steps(self) -> None:
@@ -1408,7 +1413,11 @@ class MainWindow(QMainWindow):
         self.overlay.set_scale(self.settings["overlay_scale"])
         self.overlay.set_opacity(self.settings["overlay_opacity"])
         self.overlay.set_count(self.stats.total)
+        self.overlay.set_locked(bool(self.settings["overlay_locked"]))
         self.overlay.position_saved.connect(self._save_overlay_position)
+        self.overlay.lock_toggled.connect(lambda locked: self.settings.set(overlay_locked=locked))
+        self.overlay.open_requested.connect(self.bring_to_front)
+        self.overlay.hide_requested.connect(lambda: self.setup.overlay_enabled.setChecked(False))
         self._overlay_positioning = False
         self._overlay_screen = None
 
@@ -1534,6 +1543,7 @@ class MainWindow(QMainWindow):
 
     def _show_stats(self) -> None:
         self.tracker.show_stats(self.stats)
+        self.overlay.set_details(self.stats.today, self.stats.session)
         self.tray.setToolTip(f"Chest Tracker: {self.stats.total:,} chests")
 
     def go_to(self, index: int) -> None:
@@ -1679,6 +1689,10 @@ class MainWindow(QMainWindow):
         if save:
             self.settings.set(overlay_opacity=self.overlay.opacity)
 
+    def set_overlay_game_only(self, game_only: bool) -> None:
+        self.settings.set(overlay_game_only=game_only)
+        self._sync_overlay()
+
     def set_overlay_enabled(self, enabled: bool) -> None:
         self.settings.set(overlay_enabled=enabled)
         if not enabled and self._overlay_positioning:
@@ -1731,17 +1745,23 @@ class MainWindow(QMainWindow):
             if not self.overlay.isVisible():
                 self.overlay.show()
             return
-        if not self.settings["overlay_enabled"] or not fortnite_focused():
+        in_game = fortnite_focused()
+        if not self.settings["overlay_enabled"] or (self.settings["overlay_game_only"] and not in_game):
             self.overlay.set_click_through(False)
             self.overlay.hide()
             return
 
-        bounds = foreground_window_bounds()
-        center = QPoint((bounds[0] + bounds[2]) // 2, (bounds[1] + bounds[3]) // 2)
-        screen = QGuiApplication.screenAt(center) or self.screen() or QGuiApplication.primaryScreen()
+        if in_game:
+            bounds = foreground_window_bounds()
+            center = QPoint((bounds[0] + bounds[2]) // 2, (bounds[1] + bounds[3]) // 2)
+            screen = QGuiApplication.screenAt(center)
+        else:
+            screen = self._overlay_screen
+        screen = screen or self.screen() or QGuiApplication.primaryScreen()
         if screen is not self._overlay_screen:
             self._place_overlay(screen)
-        self.overlay.set_click_through(True)
+        # In game the mini window never steals a click; on the desktop it can be unlocked and moved.
+        self.overlay.set_click_through(in_game and self.overlay.locked)
         if not self.overlay.isVisible():
             self.overlay.show()
 

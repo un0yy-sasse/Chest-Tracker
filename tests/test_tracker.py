@@ -366,8 +366,9 @@ def test_settings_save_and_keep_defaults(tmp_path):
     assert settings["player_name"] == "Sam"
     assert settings["interact_keys"] == ["E"]
     assert settings["remove_key"] == "F10"
-    assert settings["overlay_enabled"] is False
-    assert settings["overlay_position"] == [0.76, 0.06]
+    assert settings["overlay_enabled"] is True
+    assert settings["overlay_position"] == [0.985, 0.03]
+    assert settings["overlay_locked"] is True
     assert settings["fortnite_account_type"] == "epic"
     assert settings["fortnite_stats_window"] == "lifetime"
 

@@ -16,6 +16,8 @@
 
 </div>
 
+<p align="center"><img src="docs/images/mini.png" alt="The mini window: locked, unlocked for moving, and paused" width="80%"></p>
+
 <sub>Screenshots show sample data.</sub>
 
 ## What it does
@@ -30,7 +32,7 @@
 - **Finds your screen.** It follows Fortnite to whichever monitor it's on.
 - **Pause key.** Press **F9** in Fortnite to stop counting (say, in a party lobby or when you are messing about) and press it again to resume. The overlay shows PAUSED.
 - **Optional chime.** A short sound when a chest is counted, for when you miss the animation. Off by default, with its own volume.
-- **Optional in-game overlay.** Show the chest count over Fortnite, drag it clear of your HUD in Setup, and mouse input passes through while playing. You can change its size and opacity in Setup. The overlay is excluded from the app's own screen capture, so it can't be mistaken for part of the game.
+- **Mini window.** A small always-on-top counter in the top-right corner shows your total, today and this session. Click its lock to unlock it, drag it anywhere and lock it again; while Fortnite is in front, clicks pass straight through it. Right-click for options, double-click to open the app. Size, opacity and "only while Fortnite is in front" are in Setup. It is excluded from the app's own screen capture, so it can't be mistaken for part of the game.
 
 ## Get started
 
