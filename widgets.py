@@ -4,32 +4,36 @@ import ctypes
 import math
 import random
 from dataclasses import dataclass
+from datetime import date
 
-from PySide6.QtCore import QPointF, QRectF, Qt, QTimer, Signal
+from PySide6.QtCore import QPointF, QRectF, QSize, Qt, QTimer, Signal
 from PySide6.QtGui import (
     QBrush, QColor, QFont, QFontMetricsF, QKeyEvent, QLinearGradient, QMouseEvent, QPainter, QPainterPath, QPen,
     QRadialGradient,
 )
-from PySide6.QtWidgets import QSizePolicy, QWidget
+from PySide6.QtWidgets import QAbstractButton, QSizePolicy, QWidget
 
-# Strictly monochrome: black surfaces, white for anything that matters, greys for the rest.
-# MINT and EMBER are only for "working" and "problem".
-NIGHT = "#000000"  # page background
-DUSK = "#0E0E0E"  # cards and panels
-RAISED = "#1A1A1A"  # hovered buttons and menu items
-LINE = "#262626"  # borders
-ACCENT = "#FFFFFF"  # selected tabs, primary buttons, focus rings
+# Graphite: near-black surfaces, quiet greys, off-white for primary actions and a single
+# champagne gold kept for the loot itself. MINT and EMBER are only for "working" and "problem".
+NIGHT = "#0B0C0E"  # page background
+SIDEBAR = "#0E0F12"  # navigation column
+DUSK = "#131519"  # cards and panels
+RAISED = "#1B1E23"  # hovered buttons and menu items
+LINE = "#23262D"  # borders
+LINE_STRONG = "#30343C"  # input and button borders
+ACCENT = "#ECEDEF"  # primary buttons
 ACCENT_LIGHT = "#FFFFFF"
-ACCENT_DEEP = "#BDBDBD"
-CYAN = "#FFFFFF"  # secondary figures
-GOLD = "#FFFFFF"  # chests and chest counts
-GOLD_LIGHT = "#E6E6E6"  # highlights
-GOLD_DEEP = "#6E6E6E"  # pressed states and coin edges
-BONE = "#F2F2F2"  # main text
-ASH = "#8F8F8F"  # secondary text
-MINT = "#5FD08A"
-EMBER = "#F06A6A"
-INK = "#000000"  # outlines and the chest's dark body
+ACCENT_DEEP = "#C4C7CD"
+CYAN = "#9AA0AA"  # secondary figures
+GOLD = "#D8B46E"  # chests and chest counts
+GOLD_LIGHT = "#ECD3A1"  # highlights
+GOLD_DEEP = "#8A6A2F"  # pressed states and coin edges
+BONE = "#ECEDEF"  # main text
+ASH = "#8B919B"  # secondary text
+FAINT = "#5B606A"  # captions and axis labels
+MINT = "#45B98E"
+EMBER = "#EF6A62"
+INK = "#08090B"  # outlines and the chest's dark body
 
 FONT_UI = '"Segoe UI Variable Text", "Segoe UI"'
 FONT_DISPLAY = "Segoe UI Variable Display"
@@ -62,7 +66,7 @@ class Coin:
 
 
 class ChestStage(QWidget):
-    """The main stage: a chest that reacts to what the tracker sees, above the count."""
+    """A compact live view: a chest that reacts to what the tracker sees."""
 
     HOVER_LID = 0.14
     PENDING_LID = 0.3
@@ -70,7 +74,7 @@ class ChestStage(QWidget):
     def __init__(self):
         super().__init__()
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        self.setMinimumSize(380, 400)
+        self.setMinimumSize(240, 210)
         self.setAttribute(Qt.WidgetAttribute.WA_Hover)
         self.setAccessibleName("Chests opened: 0")
         self.count = 0
@@ -184,8 +188,8 @@ class ChestStage(QWidget):
         self.update()
 
     def _chest_box(self) -> tuple[float, float, float]:
-        width = min(self.width() * 0.49, self.height() * 0.49)
-        return self.width() * 0.73, self.height() * 0.83, width
+        width = min(self.width() * 0.6, self.height() * 0.6)
+        return self.width() * 0.5, self.height() * 0.8, width
 
     def _body_top(self) -> float:
         _, bottom, width = self._chest_box()
@@ -210,38 +214,17 @@ class ChestStage(QWidget):
         p.end()
 
     def _paint_backdrop(self, p: QPainter) -> None:
-        p.fillRect(self.rect(), QColor(NIGHT))
         center, bottom, width = self._chest_box()
-        glow = QRadialGradient(QPointF(center, bottom - width * 0.2), width * 1.25)
-        strength = 0.08 + 0.24 * self.flash
+        glow = QRadialGradient(QPointF(center, bottom - width * 0.25), width * 1.1)
         color = QColor(GOLD)
-        color.setAlphaF(strength)
+        color.setAlphaF(0.05 + 0.22 * self.flash)
         glow.setColorAt(0, color)
         glow.setColorAt(1, QColor(0, 0, 0, 0))
-        card = QRectF(self.rect()).adjusted(1, 1, -1, -1)
-        shape = QPainterPath()
-        shape.addRoundedRect(card, 10, 10)
-        fill = QLinearGradient(card.topLeft(), card.bottomRight())
-        fill.setColorAt(0, QColor(DUSK))
-        fill.setColorAt(1, QColor(DUSK))
-        edge = QLinearGradient(card.topLeft(), card.bottomRight())
-        edge.setColorAt(0, QColor(LINE))
-        edge.setColorAt(1, QColor(LINE))
-        p.setPen(QPen(QBrush(edge), 1.2))
-        p.setBrush(QBrush(fill))
-        p.drawPath(shape)
-        haze = QRadialGradient(QPointF(card.left() + card.width() * 0.18, card.top()), card.width() * 0.55)
-        haze.setColorAt(0, QColor(255, 255, 255, 10))
-        haze.setColorAt(1, QColor(255, 255, 255, 0))
-        p.save()
-        p.setClipPath(shape)
-        p.fillRect(self.rect(), QBrush(haze))
         p.fillRect(self.rect(), QBrush(glow))
-        p.restore()
 
         floor = QRadialGradient(QPointF(center, bottom + width * 0.015), width * 0.68)
-        floor.setColorAt(0, QColor(8, 8, 9, 170))
-        floor.setColorAt(1, QColor(8, 8, 9, 0))
+        floor.setColorAt(0, QColor(0, 0, 0, 150))
+        floor.setColorAt(1, QColor(0, 0, 0, 0))
         p.save()
         p.translate(center, bottom + width * 0.015)
         p.scale(1, 0.13)
@@ -288,7 +271,7 @@ class ChestStage(QWidget):
         if openness > 0.02:
             p.setPen(outline)
             mouth = QLinearGradient(0, lid_bottom, 0, body_top)
-            mouth.setColorAt(0, QColor("#111111"))
+            mouth.setColorAt(0, QColor("#0F1013"))
             mouth.setColorAt(1, QColor(GOLD))
             p.setBrush(QBrush(mouth))
             p.drawRect(QRectF(center - half * 0.96, lid_bottom, width * 0.96, body_top - lid_bottom + width * 0.02))
@@ -307,14 +290,14 @@ class ChestStage(QWidget):
             lid.lineTo(center + half, lid_bottom)
             lid.closeSubpath()
             shade = QLinearGradient(0, lid_bottom - face, 0, lid_bottom)
-            shade.setColorAt(0, QColor("#2E2E2E"))
-            shade.setColorAt(1, QColor("#141414"))
+            shade.setColorAt(0, QColor("#2E323A"))
+            shade.setColorAt(1, QColor("#181A1F"))
             p.setBrush(QBrush(shade))
             p.drawPath(lid)
             self._paint_bands(p, center, width, lid_bottom - face * 0.82, lid_bottom)
         else:
             back = QRectF(center - half, lid_bottom + face, width, -face)
-            p.setBrush(QColor("#111111"))
+            p.setBrush(QColor("#121418"))
             p.drawRoundedRect(back, width * 0.03, width * 0.03)
             p.setPen(Qt.PenStyle.NoPen)
             p.setBrush(QColor(GOLD))
@@ -323,11 +306,11 @@ class ChestStage(QWidget):
         # Body with plank lines and metal corners.
         p.setPen(outline)
         planks = QLinearGradient(0, body_top, 0, bottom)
-        planks.setColorAt(0, QColor("#222222"))
-        planks.setColorAt(1, QColor("#0B0B0B"))
+        planks.setColorAt(0, QColor("#24272D"))
+        planks.setColorAt(1, QColor("#111316"))
         p.setBrush(QBrush(planks))
         p.drawRoundedRect(QRectF(center - half, body_top, width, bottom - body_top), width * 0.02, width * 0.02)
-        p.setPen(QPen(QColor(255, 255, 255, 28), width * 0.008))
+        p.setPen(QPen(QColor(255, 255, 255, 18), width * 0.008))
         for step in (0.34, 0.67):
             y = body_top + (bottom - body_top) * step
             p.drawLine(QPointF(center - half * 0.96, y), QPointF(center + half * 0.96, y))
@@ -365,31 +348,20 @@ class ChestStage(QWidget):
             p.restore()
 
     def _paint_count(self, p: QPainter) -> None:
-        text = f"{self.count:,}"
-        size = min(self.height() * 0.13, self.width() * 0.11) * (1 + 0.14 * self.pop)
-        p.setPen(QColor(ASH))
-        p.setFont(QFont("Segoe UI", 10, QFont.Weight.DemiBold))
-        p.drawText(
-            QRectF(self.width() * 0.07, self.height() * 0.28, self.width() * 0.43, 22),
-            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
-            "ALL-TIME CHESTS",
-        )
-        count_rect = QRectF(self.width() * 0.065, self.height() * 0.32, self.width() * 0.40, self.height() * 0.23)
-        count_font = display_font(size)
-        while size > 20 and QFontMetricsF(count_font).horizontalAdvance(text) > count_rect.width():
-            size -= 1
-            count_font = display_font(size)
-        p.setPen(QColor(GOLD))
-        p.setFont(count_font)
-        p.drawText(count_rect, Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter, text)
-        p.setPen(QColor(ASH))
-        caption = QFont("Segoe UI")
-        caption.setPixelSize(14)
+        if self.searching:
+            text, color = "Checking this chest…", GOLD
+        elif self.close_timer.isActive():
+            text, color = "Chest counted", GOLD
+        else:
+            text, color = "Ready for the next chest", FAINT
+        caption = QFont(["Segoe UI Variable Text", "Segoe UI"])
+        caption.setPixelSize(12)
+        caption.setWeight(QFont.Weight.DemiBold)
         p.setFont(caption)
-        text = "Checking this chest..." if self.searching else ("chest opened" if self.count == 1 else "chests opened")
+        p.setPen(QColor(color))
         p.drawText(
-            QRectF(self.width() * 0.07, self.height() * 0.55, self.width() * 0.43, 30),
-            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter, text,
+            QRectF(0, self.height() - 30, self.width(), 22),
+            Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter, text,
         )
 
 
@@ -562,7 +534,7 @@ class LeaderRow(QWidget):
         share = max(0.0, self.count / self.top) if self.top > 0 else 0.0
         bar_rect = QRectF(area.left(), area.top(), area.width() * share, area.height())
         bar = QLinearGradient(bar_rect.topLeft(), bar_rect.topRight())
-        start, end = QColor(ACCENT if self.rank == 1 else ASH), QColor(CYAN if self.rank == 1 else ASH)
+        start, end = QColor(GOLD if self.rank == 1 else ASH), QColor(GOLD if self.rank == 1 else ASH)
         start.setAlphaF(0.38 if self.rank == 1 else 0.14)
         end.setAlphaF(0.22 if self.rank == 1 else 0.08)
         bar.setColorAt(0, start)
@@ -614,9 +586,158 @@ class StepBadge(QWidget):
             p.setPen(pen)
             p.drawPolyline([QPointF(9, 15), QPointF(13.5, 19.5), QPointF(21, 11)])
             return
-        p.setPen(QPen(QColor(ACCENT if self.active else LINE), 2))
+        p.setPen(QPen(QColor(GOLD if self.active else LINE_STRONG), 1.6))
         p.setBrush(QColor(NIGHT))
         p.drawEllipse(circle)
-        p.setPen(QColor(ACCENT_LIGHT if self.active else ASH))
+        p.setPen(QColor(GOLD if self.active else ASH))
         p.setFont(display_font(17))
         p.drawText(circle, Qt.AlignmentFlag.AlignCenter, str(self.number))
+
+
+class DailyBars(QWidget):
+    """Chests per day as quiet bars, today highlighted in gold."""
+
+    def __init__(self):
+        super().__init__()
+        self.days: list[tuple[date, int]] = []
+        self.hovered = -1
+        self.setMouseTracking(True)
+        self.setMinimumHeight(180)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+
+    def set_days(self, days: list[tuple[date, int]]) -> None:
+        self.days = days
+        total = sum(count for _, count in days)
+        self.setAccessibleName(f"{total} chests in the last {len(days)} days")
+        self.update()
+
+    def _plot(self) -> QRectF:
+        return QRectF(self.rect()).adjusted(34, 10, -4, -26)
+
+    def _bar_index(self, x: float) -> int:
+        plot = self._plot()
+        if not self.days or not plot.left() <= x <= plot.right():
+            return -1
+        return min(len(self.days) - 1, int((x - plot.left()) / (plot.width() / len(self.days))))
+
+    def mouseMoveEvent(self, event: QMouseEvent) -> None:
+        index = self._bar_index(event.position().x())
+        if index != self.hovered:
+            self.hovered = index
+            self.update()
+
+    def leaveEvent(self, event) -> None:
+        self.hovered = -1
+        self.update()
+
+    @staticmethod
+    def _nice_top(value: int) -> int:
+        if value <= 4:
+            return 4
+        magnitude = 10 ** (len(str(value)) - 1)
+        for step in (1, 1.2, 1.6, 2, 2.4, 3, 4, 5, 6, 8, 10):
+            top = int(step * magnitude)
+            if top >= value and top % 4 == 0:
+                return top
+        return value + (4 - value % 4) % 4
+
+    def paintEvent(self, event) -> None:
+        p = QPainter(self)
+        p.setRenderHint(QPainter.RenderHint.Antialiasing)
+        plot = self._plot()
+        top = self._nice_top(max((count for _, count in self.days), default=0))
+        small = QFont(["Segoe UI Variable Text", "Segoe UI"])
+        small.setPixelSize(11)
+        p.setFont(small)
+
+        for step in range(5):
+            y = plot.bottom() - plot.height() * step / 4
+            p.setPen(QPen(QColor(LINE), 1, Qt.PenStyle.SolidLine if step == 0 else Qt.PenStyle.DotLine))
+            p.drawLine(QPointF(plot.left(), y), QPointF(plot.right(), y))
+            p.setPen(QColor(FAINT))
+            p.drawText(QRectF(0, y - 8, plot.left() - 8, 16),
+                       Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter, f"{round(top * step / 4):,}")
+        if not self.days:
+            return
+
+        slot = plot.width() / len(self.days)
+        bar_width = min(28.0, slot * 0.56)
+        for index, (day, count) in enumerate(self.days):
+            x = plot.left() + slot * index + (slot - bar_width) / 2
+            height = plot.height() * count / top if top else 0
+            is_today = index == len(self.days) - 1
+            color = QColor(GOLD if is_today else "#3A3F48")
+            if index == self.hovered and not is_today:
+                color = QColor("#5A606B")
+            p.setPen(Qt.PenStyle.NoPen)
+            p.setBrush(color)
+            if height > 0:
+                bar = QPainterPath()
+                bar.addRoundedRect(QRectF(x, plot.bottom() - height, bar_width, height), 3, 3)
+                p.drawPath(bar)
+            p.setPen(QColor(BONE if is_today else FAINT))
+            label = "Today" if is_today else day.strftime("%a")[:2]
+            p.drawText(QRectF(plot.left() + slot * index - 6, plot.bottom() + 6, slot + 12, 16),
+                       Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop, label)
+
+        if 0 <= self.hovered < len(self.days):
+            day, count = self.days[self.hovered]
+            text = f"{day.strftime('%d %b')}  ·  {count:,} chest{'s' if count != 1 else ''}"
+            metrics = QFontMetricsF(small)
+            box = QRectF(0, 0, metrics.horizontalAdvance(text) + 18, 24)
+            center = plot.left() + slot * (self.hovered + 0.5)
+            box.moveCenter(QPointF(min(max(center, plot.left() + box.width() / 2), plot.right() - box.width() / 2),
+                                   plot.top() + 12))
+            p.setPen(QPen(QColor(LINE_STRONG), 1))
+            p.setBrush(QColor(RAISED))
+            p.drawRoundedRect(box, 5, 5)
+            p.setPen(QColor(BONE))
+            p.drawText(box, Qt.AlignmentFlag.AlignCenter, text)
+
+
+class NavButton(QAbstractButton):
+    """A sidebar entry: a Segoe Fluent icon and a label, with a gold marker when selected."""
+
+    def __init__(self, glyph: str, text: str):
+        super().__init__()
+        self.glyph = glyph
+        self.setText(text)
+        self.setCheckable(True)
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.setAttribute(Qt.WidgetAttribute.WA_Hover)
+        self.setFixedHeight(38)
+        self.setFocusPolicy(Qt.FocusPolicy.TabFocus)
+        self.setAccessibleName(text)
+
+    def sizeHint(self) -> QSize:
+        return QSize(200, 38)
+
+    def paintEvent(self, event) -> None:
+        p = QPainter(self)
+        p.setRenderHint(QPainter.RenderHint.Antialiasing)
+        area = QRectF(self.rect()).adjusted(0, 1, 0, -1)
+        hovered = self.underMouse()
+        if self.isChecked() or hovered:
+            p.setPen(Qt.PenStyle.NoPen)
+            p.setBrush(QColor(RAISED if self.isChecked() else "#15171B"))
+            p.drawRoundedRect(area, 7, 7)
+        if self.isChecked():
+            p.setBrush(QColor(GOLD))
+            p.drawRoundedRect(QRectF(area.left(), area.top() + 10, 3, area.height() - 20), 1.5, 1.5)
+        if self.hasFocus():
+            p.setPen(QPen(QColor(LINE_STRONG), 1))
+            p.setBrush(Qt.BrushStyle.NoBrush)
+            p.drawRoundedRect(area.adjusted(0.5, 0.5, -0.5, -0.5), 7, 7)
+
+        color = QColor(BONE if self.isChecked() else (BONE if hovered else ASH))
+        icon = QFont(["Segoe Fluent Icons", "Segoe MDL2 Assets"])
+        icon.setPixelSize(16)
+        p.setFont(icon)
+        p.setPen(QColor(GOLD) if self.isChecked() else color)
+        p.drawText(QRectF(area.left() + 14, area.top(), 20, area.height()), Qt.AlignmentFlag.AlignCenter, self.glyph)
+        text = QFont(["Segoe UI Variable Text", "Segoe UI"])
+        text.setPixelSize(14)
+        text.setWeight(QFont.Weight.DemiBold if self.isChecked() else QFont.Weight.Medium)
+        p.setFont(text)
+        p.setPen(color)
+        p.drawText(area.adjusted(46, 0, -8, 0), Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft, self.text())

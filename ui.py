@@ -36,10 +36,12 @@ from watcher import (
     foreground_window_bounds, interact_check, selection_too_big, key_code
 )
 from widgets import (
-    ACCENT, ACCENT_DEEP, ACCENT_LIGHT, ASH, BONE, CYAN, DUSK, EMBER, FONT_DISPLAY, FONT_UI, GOLD, GOLD_DEEP,
-    GOLD_LIGHT, LINE, MINT, NIGHT, RAISED,
-    ChestStage, LeaderRow, MatchMeter, StepBadge, TallyMarks,
+    ACCENT, ACCENT_DEEP, ACCENT_LIGHT, ASH, BONE, DUSK, EMBER, FAINT, FONT_DISPLAY, FONT_UI, GOLD, GOLD_LIGHT,
+    INK, LINE, LINE_STRONG, MINT, NIGHT, RAISED, SIDEBAR,
+    ChestStage, DailyBars, LeaderRow, MatchMeter, NavButton, StepBadge,
 )
+
+APP_VERSION = "1.0.1"
 
 log = logging.getLogger("chest-tracker")
 
@@ -47,87 +49,92 @@ STYLE = f"""
 * {{ font-family: {FONT_UI}; font-size: 14px; color: {BONE}; }}
 QMainWindow, QDialog, #page, QScrollArea, #scrollBody {{ background: {NIGHT}; }}
 QScrollArea {{ border: none; }}
-#topbar {{ background: {NIGHT}; border-bottom: 1px solid {LINE}; }}
-#brand {{ font-family: "{FONT_DISPLAY}"; font-size: 15px; font-weight: 700; letter-spacing: 3px; }}
-#tab {{ background: transparent; border: none; border-bottom: 2px solid transparent; border-radius: 0;
-        padding: 18px 14px 16px 14px; color: {ASH}; font-size: 13px; font-weight: 600; letter-spacing: 1px; }}
-#tab:hover {{ color: {BONE}; }}
-#tab:checked {{ color: #FFFFFF; border-bottom-color: #FFFFFF; }}
-#tab:focus {{ color: {BONE}; }}
-#heading {{ font-family: "{FONT_DISPLAY}"; font-size: 30px; font-weight: 600; }}
-#subheading {{ font-family: "{FONT_DISPLAY}"; font-size: 17px; font-weight: 600; color: {BONE}; }}
+#sidebar {{ background: {SIDEBAR}; border-right: 1px solid {LINE}; }}
+#brand {{ font-family: "{FONT_DISPLAY}"; font-size: 15px; font-weight: 700; }}
+#version {{ color: {FAINT}; font-size: 11px; }}
+#navTitle {{ color: {FAINT}; font-size: 10px; font-weight: 700; letter-spacing: 1.6px; padding-left: 4px; }}
+#statusCard {{ background: {DUSK}; border: 1px solid {LINE}; border-radius: 10px; }}
+#heading {{ font-family: "{FONT_DISPLAY}"; font-size: 26px; font-weight: 700; }}
+#subheading {{ font-family: "{FONT_DISPLAY}"; font-size: 15px; font-weight: 600; color: {BONE}; }}
 #muted {{ color: {ASH}; }}
 #small {{ color: {ASH}; font-size: 12px; }}
+#faint {{ color: {FAINT}; font-size: 12px; }}
 #rail {{ background: transparent; }}
-#statCard, #activityCard {{ background: {DUSK}; border: 1px solid {LINE}; border-radius: 8px; }}
-#tile {{ background: {NIGHT}; border: 1px solid {LINE}; border-radius: 6px; }}
-#cardTitle {{ color: {ASH}; font-size: 11px; font-weight: 700; letter-spacing: 2px; }}
-#sessionCount {{ font-family: "{FONT_DISPLAY}"; font-size: 32px; font-weight: 600; color: #FFFFFF; }}
+#card, #statCard, #activityCard {{ background: {DUSK}; border: 1px solid {LINE}; border-radius: 12px; }}
+#kpi {{ background: {DUSK}; border: 1px solid {LINE}; border-radius: 12px; }}
+#kpiHero {{ background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #17181C, stop:1 {DUSK});
+            border: 1px solid #3A3328; border-radius: 12px; }}
+#kpiTitle {{ color: {ASH}; font-size: 11px; font-weight: 700; letter-spacing: 1.4px; }}
+#kpiValue {{ font-family: "{FONT_DISPLAY}"; font-size: 30px; font-weight: 600; color: {BONE}; }}
+#kpiHeroValue {{ font-family: "{FONT_DISPLAY}"; font-size: 30px; font-weight: 700; color: {GOLD}; }}
+#kpiCaption {{ color: {FAINT}; font-size: 12px; }}
+#tile {{ background: {NIGHT}; border: 1px solid {LINE}; border-radius: 8px; }}
+#cardTitle {{ color: {ASH}; font-size: 11px; font-weight: 700; letter-spacing: 1.4px; }}
+#sessionCount {{ font-family: "{FONT_DISPLAY}"; font-size: 28px; font-weight: 600; color: {BONE}; }}
+#todayCount {{ font-family: "{FONT_DISPLAY}"; font-size: 40px; font-weight: 600; color: {GOLD}; }}
 #activityList {{ background: transparent; border: none; outline: none; }}
-#activityList::item {{ padding: 9px 2px; border-bottom: 1px solid {LINE}; }}
+#activityList::item {{ padding: 8px 2px; border-bottom: 1px solid {LINE}; }}
 #activityList::item:selected {{ background: transparent; }}
-#todayCount {{ font-family: "{FONT_DISPLAY}"; font-size: 46px; font-weight: 600; color: #FFFFFF; }}
-#notice {{ background: {DUSK}; border: 1px solid {LINE}; border-left: 3px solid #FFFFFF; border-radius: 6px; }}
-#pill {{ border: 1px solid {LINE}; border-radius: 4px; background: {NIGHT}; min-height: 18px; padding: 5px 12px;
-         font-size: 12px; font-weight: 600; }}
-QLineEdit {{ background: {NIGHT}; border: 1px solid {LINE}; border-radius: 6px; padding: 9px 12px;
-             selection-background-color: #FFFFFF; selection-color: #000000; }}
-QLineEdit:hover {{ border-color: #3A3A3A; }}
-QLineEdit:focus {{ border: 1px solid #FFFFFF; }}
-QComboBox {{ background: {NIGHT}; border: 1px solid {LINE}; border-radius: 6px; padding: 8px 12px; min-height: 20px; }}
-QComboBox:hover {{ border-color: #3A3A3A; }}
-QComboBox:focus {{ border: 1px solid #FFFFFF; }}
+#notice {{ background: #16140F; border: 1px solid #3A3328; border-radius: 10px; }}
+#pill {{ background: transparent; border: none; padding: 0; font-size: 13px; font-weight: 600; }}
+QLineEdit {{ background: {NIGHT}; border: 1px solid {LINE_STRONG}; border-radius: 8px; padding: 9px 12px;
+             selection-background-color: {GOLD}; selection-color: {INK}; }}
+QLineEdit:hover {{ border-color: #3E434C; }}
+QLineEdit:focus {{ border: 1px solid {ASH}; }}
+QComboBox {{ background: {NIGHT}; border: 1px solid {LINE_STRONG}; border-radius: 8px; padding: 8px 12px; min-height: 20px; }}
+QComboBox:hover {{ border-color: #3E434C; }}
+QComboBox:focus {{ border: 1px solid {ASH}; }}
 QComboBox::drop-down {{ border: none; width: 24px; }}
-QComboBox QAbstractItemView {{ background: {DUSK}; border: 1px solid {LINE}; selection-background-color: {RAISED}; }}
-QPushButton {{ background: {NIGHT}; border: 1px solid #3A3A3A; border-radius: 6px; padding: 9px 16px; font-weight: 600; }}
-QPushButton:hover {{ background: {RAISED}; border-color: #5A5A5A; }}
-QPushButton:pressed {{ background: {DUSK}; }}
-QPushButton:focus {{ border: 1px solid #FFFFFF; }}
-QPushButton:disabled {{ color: #4D4D4D; background: {NIGHT}; border-color: {LINE}; }}
-#primary {{ background: #FFFFFF; color: #000000; border: 1px solid #FFFFFF; font-weight: 700; }}
-#primary:hover {{ background: #DADADA; border-color: #DADADA; }}
-#primary:pressed {{ background: #BDBDBD; border-color: #BDBDBD; }}
-#primary:focus {{ border: 2px solid {ASH}; }}
+QComboBox QAbstractItemView {{ background: {DUSK}; border: 1px solid {LINE_STRONG}; selection-background-color: {RAISED}; }}
+QPushButton {{ background: {DUSK}; border: 1px solid {LINE_STRONG}; border-radius: 8px; padding: 8px 16px; font-weight: 600; }}
+QPushButton:hover {{ background: {RAISED}; border-color: #3E434C; }}
+QPushButton:pressed {{ background: {NIGHT}; }}
+QPushButton:focus {{ border: 1px solid {ASH}; }}
+QPushButton:disabled {{ color: {FAINT}; background: {NIGHT}; border-color: {LINE}; }}
+#primary {{ background: {ACCENT}; color: {INK}; border: 1px solid {ACCENT}; font-weight: 700; }}
+#primary:hover {{ background: {ACCENT_LIGHT}; border-color: {ACCENT_LIGHT}; }}
+#primary:pressed {{ background: {ACCENT_DEEP}; border-color: {ACCENT_DEEP}; }}
+#primary:focus {{ border: 2px solid {GOLD}; }}
 #primary:disabled {{ background: {RAISED}; color: {ASH}; border-color: {RAISED}; }}
 #capture {{ text-align: left; padding: 12px 15px; font-family: "{FONT_DISPLAY}"; font-size: 16px; font-weight: 600; }}
-#capture[listening="true"] {{ border: 1px solid #FFFFFF; color: #FFFFFF; background: {NIGHT}; }}
+#capture[listening="true"] {{ border: 1px solid {GOLD}; color: {GOLD}; background: {NIGHT}; }}
 #step {{ background: transparent; }}
-#stepHeader {{ background: transparent; border: none; border-radius: 6px; text-align: left; padding: 8px 10px;
-               font-family: "{FONT_DISPLAY}"; font-size: 17px; font-weight: 600; }}
+#stepHeader {{ background: transparent; border: none; border-radius: 8px; text-align: left; padding: 8px 10px;
+               font-family: "{FONT_DISPLAY}"; font-size: 16px; font-weight: 600; }}
 #stepHeader:hover {{ background: {DUSK}; }}
-#stepHeader:focus {{ background: {DUSK}; color: #FFFFFF; }}
+#stepHeader:focus {{ background: {DUSK}; color: {GOLD}; }}
 #disclosure {{ background: transparent; border: none; text-align: left; padding: 6px 0; color: {ASH}; }}
 #disclosure:hover {{ color: {BONE}; }}
-#disclosure:focus {{ color: #FFFFFF; }}
-#promptThumb {{ background: {NIGHT}; border: 1px solid {LINE}; border-radius: 6px; padding: 8px; }}
+#disclosure:focus {{ color: {GOLD}; }}
+#promptThumb {{ background: {NIGHT}; border: 1px solid {LINE}; border-radius: 8px; padding: 8px; }}
 QListWidget {{ background: transparent; border: none; outline: none; }}
 QListWidget::item {{ padding: 6px 0; border: none; }}
 QListWidget::item:selected {{ background: transparent; }}
 QCheckBox {{ spacing: 9px; }}
-QCheckBox::indicator {{ width: 16px; height: 16px; border: 1px solid #5A5A5A; border-radius: 3px; background: {NIGHT}; }}
-QCheckBox::indicator:checked {{ background: #FFFFFF; border-color: #FFFFFF; }}
-QCheckBox:focus {{ color: #FFFFFF; }}
+QCheckBox::indicator {{ width: 16px; height: 16px; border: 1px solid #4A4F59; border-radius: 4px; background: {NIGHT}; }}
+QCheckBox::indicator:checked {{ background: {GOLD}; border-color: {GOLD}; }}
+QCheckBox:focus {{ color: {BONE}; }}
 QSlider {{ background: transparent; }}
-QSlider::groove:horizontal {{ height: 4px; border-radius: 2px; background: {LINE}; }}
-QSlider::sub-page:horizontal {{ border-radius: 2px; background: #FFFFFF; }}
-QSlider::add-page:horizontal {{ border-radius: 2px; background: {LINE}; }}
-QSlider::handle:horizontal {{ width: 14px; height: 14px; margin: -5px 0; border-radius: 7px; background: #FFFFFF; }}
-QSlider::handle:horizontal:hover {{ background: #DADADA; }}
-QSlider::handle:horizontal:focus {{ background: #DADADA; }}
+QSlider::groove:horizontal {{ height: 4px; border-radius: 2px; background: {LINE_STRONG}; }}
+QSlider::sub-page:horizontal {{ border-radius: 2px; background: {GOLD}; }}
+QSlider::add-page:horizontal {{ border-radius: 2px; background: {LINE_STRONG}; }}
+QSlider::handle:horizontal {{ width: 14px; height: 14px; margin: -5px 0; border-radius: 7px; background: {BONE}; }}
+QSlider::handle:horizontal:hover {{ background: #FFFFFF; }}
+QSlider::handle:horizontal:focus {{ background: {GOLD_LIGHT}; }}
 QScrollBar:vertical {{ background: transparent; width: 8px; }}
-QScrollBar::handle:vertical {{ background: {LINE}; border-radius: 4px; min-height: 30px; }}
-QScrollBar::handle:vertical:hover {{ background: #3A3A3A; }}
+QScrollBar::handle:vertical {{ background: {LINE_STRONG}; border-radius: 4px; min-height: 30px; }}
+QScrollBar::handle:vertical:hover {{ background: #3E434C; }}
 QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{ height: 0; }}
 QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {{ background: transparent; }}
-QMenu {{ background: {DUSK}; border: 1px solid {LINE}; border-radius: 6px; padding: 4px; }}
-QMenu::item {{ padding: 8px 24px; border-radius: 4px; }}
+QMenu {{ background: {DUSK}; border: 1px solid {LINE_STRONG}; border-radius: 8px; padding: 4px; }}
+QMenu::item {{ padding: 8px 24px; border-radius: 5px; }}
 QMenu::item:selected {{ background: {RAISED}; }}
-QToolTip {{ background: {DUSK}; color: {BONE}; border: 1px solid {LINE}; padding: 5px 8px; }}
+QToolTip {{ background: {RAISED}; color: {BONE}; border: 1px solid {LINE_STRONG}; padding: 5px 8px; }}
 """
 
 STATES = {
     "off": (ASH, "Paused"),
-    "setup": (BONE, "Setup isn't finished"),
+    "setup": (GOLD, "Setup isn't finished"),
     "waiting": (ASH, "Waiting for Fortnite"),
     "watching": (MINT, "Watching for chests"),
     "black": (EMBER, "Can't see the game"),
@@ -185,7 +192,7 @@ def dark_title_bar(window: QWidget) -> None:
     dwm.DwmSetWindowAttribute(handle, 35, ctypes.byref(caption), ctypes.sizeof(caption))
 
 
-def scroll_page(margins: tuple[int, int, int, int] = (40, 30, 40, 34)) -> tuple[QScrollArea, QVBoxLayout]:
+def scroll_page(margins: tuple[int, int, int, int] = (32, 26, 32, 28)) -> tuple[QScrollArea, QVBoxLayout]:
     scroll = QScrollArea()
     scroll.setWidgetResizable(True)
     scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
@@ -494,108 +501,143 @@ class PromptDialog(QDialog):
         self.accept()
 
 
+def card(name: str = "card") -> tuple[QFrame, QVBoxLayout]:
+    frame = QFrame()
+    frame.setObjectName(name)
+    layout = QVBoxLayout(frame)
+    layout.setContentsMargins(20, 16, 20, 16)
+    layout.setSpacing(6)
+    return frame, layout
+
+
+def kpi(title: str, hero: bool = False) -> tuple[QFrame, QLabel, QLabel]:
+    frame, layout = card("kpiHero" if hero else "kpi")
+    layout.setContentsMargins(18, 14, 18, 14)
+    layout.setSpacing(2)
+    layout.addWidget(label(title, "kpiTitle"))
+    value = label("0", "kpiHeroValue" if hero else "kpiValue")
+    layout.addWidget(value)
+    caption = label("", "kpiCaption")
+    layout.addWidget(caption)
+    return frame, value, caption
+
+
 class TrackerPage(QWidget):
+    CHART_DAYS = 14
+
     def __init__(self, window: "MainWindow"):
         super().__init__()
         self.setObjectName("page")
-        columns = QHBoxLayout(self)
-        columns.setContentsMargins(24, 16, 24, 20)
-        columns.setSpacing(16)
+        page = QVBoxLayout(self)
+        page.setContentsMargins(32, 26, 32, 24)
+        page.setSpacing(16)
 
-        left = QVBoxLayout()
-        left.setContentsMargins(0, 0, 0, 0)
-        left.setSpacing(12)
+        header = QHBoxLayout()
+        header.setSpacing(10)
+        titles = QVBoxLayout()
+        titles.setSpacing(2)
+        titles.addWidget(label("Overview", "heading"))
+        titles.addWidget(label("Every chest you open in Fortnite, counted on this PC.", "muted"))
+        header.addLayout(titles, 1)
+        self.remove = QPushButton("Undo last chest")
+        self.remove.setToolTip("Counted one by mistake? You can also press your undo key while Fortnite is focused.")
+        self.remove.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.remove.clicked.connect(lambda: window.record_chest(-1, "manual"))
+        header.addWidget(self.remove, 0, Qt.AlignmentFlag.AlignVCenter)
+        self.pause = QPushButton("Pause tracking")
+        self.pause.setObjectName("primary")
+        self.pause.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.pause.clicked.connect(window.toggle_pause)
+        header.addWidget(self.pause, 0, Qt.AlignmentFlag.AlignVCenter)
+        page.addLayout(header)
+
         self.notice_frame = QFrame()
         self.notice_frame.setObjectName("notice")
         notice_row = QHBoxLayout(self.notice_frame)
-        notice_row.setContentsMargins(16, 10, 12, 10)
+        notice_row.setContentsMargins(16, 10, 10, 10)
+        notice_row.setSpacing(12)
+        mark = label("●")
+        mark.setStyleSheet(f"color: {GOLD}; font-size: 10px;")
+        notice_row.addWidget(mark)
         self.notice = label("", wrap=True)
         notice_row.addWidget(self.notice, 1)
         finish = QPushButton("Finish setup")
-        finish.setObjectName("primary")
+        finish.setCursor(Qt.CursorShape.PointingHandCursor)
         finish.clicked.connect(lambda: window.go_to(1))
         notice_row.addWidget(finish)
-        left.addWidget(self.notice_frame)
+        page.addWidget(self.notice_frame)
 
-        left.addWidget(label("Overview", "heading"))
-        left.addWidget(label("Your totals and recent activity, in one place.", "muted"))
+        kpis = QHBoxLayout()
+        kpis.setSpacing(14)
+        tile, self.total, self.total_caption = kpi("ALL-TIME", hero=True)
+        kpis.addWidget(tile, 1)
+        tile, self.today, self.today_caption = kpi("TODAY")
+        kpis.addWidget(tile, 1)
+        tile, self.session, self.session_caption = kpi("THIS SESSION")
+        self.session_caption.setText("since the app started")
+        kpis.addWidget(tile, 1)
+        tile, self.average, self.average_caption = kpi("7-DAY AVERAGE")
+        kpis.addWidget(tile, 1)
+        page.addLayout(kpis)
+
+        middle = QHBoxLayout()
+        middle.setSpacing(14)
+        chart_card, chart_layout = card()
+        chart_head = QHBoxLayout()
+        chart_head.addWidget(label("Last 14 days", "subheading"))
+        chart_head.addStretch(1)
+        self.chart_total = label("", "faint")
+        chart_head.addWidget(self.chart_total)
+        chart_layout.addLayout(chart_head)
+        chart_layout.addSpacing(6)
+        self.chart = DailyBars()
+        chart_layout.addWidget(self.chart, 1)
+        middle.addWidget(chart_card, 1)
+
+        live_card, live_layout = card()
+        live_card.setFixedWidth(300)
+        live_head = QHBoxLayout()
+        live_head.addWidget(label("Live", "subheading"))
+        live_head.addStretch(1)
+        live_head.addWidget(label("Lid lifts while a search is checked", "faint"))
+        live_layout.addLayout(live_head)
         self.stage = ChestStage()
-        left.addWidget(self.stage, 1)
-        columns.addLayout(left, 1)
+        live_layout.addWidget(self.stage, 1)
+        middle.addWidget(live_card)
+        page.addLayout(middle, 3)
 
-        rail = QFrame()
-        rail.setObjectName("rail")
-        rail.setFixedWidth(360)
-        side = QVBoxLayout(rail)
-        side.setContentsMargins(0, 0, 0, 0)
-        side.setSpacing(10)
-
-        today_card = QFrame()
-        today_card.setObjectName("statCard")
-        today_layout = QVBoxLayout(today_card)
-        today_layout.setContentsMargins(18, 15, 18, 14)
-        today_layout.setSpacing(5)
-        today_layout.addWidget(label("TODAY", "cardTitle"))
-        today_row = QHBoxLayout()
-        today_row.setSpacing(8)
-        self.today = label("0", "todayCount")
-        today_row.addWidget(self.today)
-        today_row.addStretch(1)
-        self.tally = TallyMarks()
-        self.tally.setFixedWidth(142)
-        today_row.addWidget(self.tally, 0, Qt.AlignmentFlag.AlignVCenter)
-        today_layout.addLayout(today_row)
-        today_layout.addWidget(label("chests opened today", "muted"))
-        side.addWidget(today_card)
-
-        session_card = QFrame()
-        session_card.setObjectName("statCard")
-        session_layout = QVBoxLayout(session_card)
-        session_layout.setContentsMargins(18, 14, 18, 13)
-        session_layout.setSpacing(3)
-        session_layout.addWidget(label("THIS SESSION", "cardTitle"))
-        session_row = QHBoxLayout()
-        self.session = label("0", "sessionCount")
-        session_row.addWidget(self.session)
-        session_row.addWidget(label("chests since launch", "muted"), 0, Qt.AlignmentFlag.AlignBottom)
-        session_row.addStretch(1)
-        session_layout.addLayout(session_row)
-        side.addWidget(session_card)
-
-        activity_card = QFrame()
-        activity_card.setObjectName("activityCard")
-        activity_layout = QVBoxLayout(activity_card)
-        activity_layout.setContentsMargins(18, 14, 18, 10)
-        activity_layout.setSpacing(4)
-        activity_layout.addWidget(label("Recent activity", "subheading"))
-        activity_layout.addWidget(label("Latest tracker events", "small"))
+        activity_card, activity_layout = card("activityCard")
+        activity_head = QHBoxLayout()
+        activity_head.addWidget(label("Recent activity", "subheading"))
+        activity_head.addStretch(1)
+        activity_head.addWidget(label("Newest first", "faint"))
+        activity_layout.addLayout(activity_head)
         self.activity = QListWidget()
         self.activity.setObjectName("activityList")
         self.activity.setSelectionMode(QListWidget.SelectionMode.NoSelection)
         self.activity.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.activity.setWordWrap(True)
+        self.activity.setMinimumHeight(110)
         activity_layout.addWidget(self.activity, 1)
-        self.empty = QListWidgetItem("Open a chest in Fortnite and it appears here.")
-        self.empty.setForeground(QColor(ASH))
+        self.empty = QListWidgetItem("Open a chest in Fortnite and it shows up here.")
+        self.empty.setForeground(QColor(FAINT))
         self.activity.addItem(self.empty)
-        side.addWidget(activity_card, 1)
-
-        actions = QHBoxLayout()
-        self.remove = QPushButton("Remove last chest")
-        self.remove.setToolTip("Counted one by mistake? Press your undo key while Fortnite is focused.")
-        self.remove.clicked.connect(lambda: window.record_chest(-1, "manual"))
-        actions.addWidget(self.remove, 1)
-        self.pause = QPushButton("Pause tracking")
-        self.pause.setObjectName("primary")
-        self.pause.clicked.connect(window.toggle_pause)
-        actions.addWidget(self.pause)
-        side.addLayout(actions)
-        columns.addWidget(rail)
+        page.addWidget(activity_card, 2)
 
     def show_stats(self, stats: Stats) -> None:
+        self.total.setText(f"{stats.total:,}")
+        self.total_caption.setText("chest opened" if stats.total == 1 else "chests opened")
         self.today.setText(f"{stats.today:,}")
-        self.tally.set_count(stats.today)
+        best = stats.best_day()
+        self.today_caption.setText(f"best day: {best:,}" if best else "no chests yet today")
         self.session.setText(f"{stats.session:,}")
+        average = stats.daily_average(7)
+        self.average.setText(f"{average:,.1f}" if average % 1 else f"{int(average):,}")
+        self.average_caption.setText("chests per day")
+        days = stats.last_days(self.CHART_DAYS)
+        self.chart.set_days(days)
+        in_range = sum(count for _, count in days)
+        self.chart_total.setText(f"{in_range:,} chest{'s' if in_range != 1 else ''}")
         self.remove.setEnabled(stats.total > 0)
 
     def log(self, text: str, color: str = BONE) -> None:
@@ -603,7 +645,7 @@ class TrackerPage(QWidget):
             self.activity.takeItem(self.activity.row(self.empty))
             self.empty = None
         top = self.activity.item(0)
-        line = f"{datetime.now():%H:%M}   {text}"
+        line = f"{datetime.now():%H:%M}     {text}"
         if top and top.text() == line:
             return
         item = QListWidgetItem(line)
@@ -1372,27 +1414,37 @@ class MainWindow(QMainWindow):
 
         self.setWindowTitle("Chest Tracker")
         self.setWindowIcon(icon)
-        self.resize(1160, 780)
-        self.setMinimumSize(920, 650)
+        self.resize(1240, 820)
+        self.setMinimumSize(1060, 720)
         self.setStyleSheet(STYLE)
 
         root = QWidget()
         self.setCentralWidget(root)
-        rows = QVBoxLayout(root)
-        rows.setContentsMargins(0, 0, 0, 0)
-        rows.setSpacing(0)
+        columns = QHBoxLayout(root)
+        columns.setContentsMargins(0, 0, 0, 0)
+        columns.setSpacing(0)
 
-        topbar = QFrame()
-        topbar.setObjectName("topbar")
-        top = QHBoxLayout(topbar)
-        top.setContentsMargins(20, 0, 20, 0)
-        top.setSpacing(4)
+        sidebar = QFrame()
+        sidebar.setObjectName("sidebar")
+        sidebar.setFixedWidth(232)
+        side = QVBoxLayout(sidebar)
+        side.setContentsMargins(14, 22, 14, 16)
+        side.setSpacing(3)
+        brand = QHBoxLayout()
+        brand.setContentsMargins(6, 0, 0, 0)
+        brand.setSpacing(10)
         logo = QLabel()
         logo.setPixmap(icon.pixmap(30, 30))
-        top.addWidget(logo)
-        top.addSpacing(6)
-        top.addWidget(label("CHEST TRACKER", "brand"))
-        top.addSpacing(26)
+        brand.addWidget(logo)
+        names = QVBoxLayout()
+        names.setSpacing(0)
+        names.addWidget(label("Chest Tracker", "brand"))
+        names.addWidget(label(f"Version {APP_VERSION}", "version"))
+        brand.addLayout(names, 1)
+        side.addLayout(brand)
+        side.addSpacing(26)
+        side.addWidget(label("MENU", "navTitle"))
+        side.addSpacing(4)
 
         self.stack = QStackedWidget()
         self.tracker = TrackerPage(self)
@@ -1400,24 +1452,28 @@ class MainWindow(QMainWindow):
         self.group = GroupPage(self)
         self.fortnite_stats = FortniteStatsPage(self)
         self.nav = QButtonGroup(self)
-        for index, (name, page) in enumerate(
-            (("Tracker", self.tracker), ("Setup", self.setup), ("Group", self.group),
-             ("Fortnite Stats", self.fortnite_stats))
-        ):
+        for index, (glyph, name, page) in enumerate((
+            ("\uE80F", "Overview", self.tracker), ("\uE713", "Setup", self.setup),
+            ("\uE716", "Group", self.group), ("\uE9D2", "Fortnite Stats", self.fortnite_stats),
+        )):
             self.stack.addWidget(page)
-            button = QPushButton(name)
-            button.setObjectName("tab")
-            button.setCheckable(True)
-            button.setCursor(Qt.CursorShape.PointingHandCursor)
+            button = NavButton(glyph, name)
             self.nav.addButton(button, index)
-            top.addWidget(button)
+            side.addWidget(button)
         self.nav.idClicked.connect(self.stack.setCurrentIndex)
         self.nav.button(0).setChecked(True)
-        top.addStretch(1)
+        side.addStretch(1)
+
+        status, status_layout = card("statusCard")
+        status_layout.setContentsMargins(14, 12, 14, 12)
+        status_layout.setSpacing(4)
+        status_layout.addWidget(label("STATUS", "navTitle"))
         self.pill = Pill()
-        top.addWidget(self.pill)
-        rows.addWidget(topbar)
-        rows.addWidget(self.stack, 1)
+        status_layout.addWidget(self.pill)
+        side.addWidget(status)
+
+        columns.addWidget(sidebar)
+        columns.addWidget(self.stack, 1)
 
         self.chest.connect(self.record_chest)
         self.attempt.connect(self._on_attempt)

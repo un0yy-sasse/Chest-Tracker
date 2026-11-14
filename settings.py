@@ -96,6 +96,7 @@ class Stats:
         self.today = 0
         self.day = date.today().isoformat()
         self.session = 0
+        self.history: dict[str, int] = {}  # chests per day, for the overview chart
         saved = read_json(self.path)
         if saved:
             try:
@@ -104,13 +105,37 @@ class Stats:
                 self.day = str(saved["day"])
             except (KeyError, TypeError, ValueError):
                 self.total, self.today = 0, 0
+            history = saved.get("history")
+            if isinstance(history, dict):
+                for day, count in history.items():
+                    try:
+                        date.fromisoformat(str(day))
+                        self.history[str(day)] = max(0, int(count))
+                    except (TypeError, ValueError):
+                        continue
+        if self.today:
+            self.history[self.day] = self.today
         self.roll_over()
+
+    HISTORY_DAYS = 120
 
     def roll_over(self, today: date | None = None) -> None:
         current = (today or date.today()).isoformat()
         if current != self.day:
             self.day = current
             self.today = 0
+
+    def last_days(self, count: int, today: date | None = None) -> list[tuple[date, int]]:
+        """The chests of each of the last `count` days, oldest first, today last."""
+        end = today or date.today()
+        days = [date.fromordinal(end.toordinal() - offset) for offset in range(count - 1, -1, -1)]
+        return [(day, self.history.get(day.isoformat(), 0)) for day in days]
+
+    def best_day(self) -> int:
+        return max(self.history.values(), default=0)
+
+    def daily_average(self, days: int = 7, today: date | None = None) -> float:
+        return sum(count for _, count in self.last_days(days, today)) / days
 
     def add(self, amount: int) -> int:
         """Change the counts and return how much the total really changed.
@@ -123,11 +148,14 @@ class Stats:
         self.total = max(0, self.total + amount)
         self.today = max(0, self.today + amount)
         self.session = max(0, self.session + amount)
+        self.history[self.day] = self.today
         self.save()
         return self.total - before
 
     def save(self) -> None:
-        _write_json(self.path, {"total": self.total, "today": self.today, "day": self.day})
+        kept = sorted(self.history.items())[-self.HISTORY_DAYS:]
+        self.history = dict(kept)
+        _write_json(self.path, {"total": self.total, "today": self.today, "day": self.day, "history": self.history})
 
 
 def import_old_setup(source: Path, folder: Path) -> bool:

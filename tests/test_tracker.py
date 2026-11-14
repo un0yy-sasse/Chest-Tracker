@@ -1020,3 +1020,26 @@ def test_a_broken_filter_never_stops_counting(quick_confirm):
 def test_no_filter_counts_everything(quick_confirm):
     chests, _ = run_with_filter(None)
     assert chests == [(1, "detected")]
+
+
+def test_stats_keep_a_daily_history_for_the_chart(tmp_path):
+    stats = Stats(tmp_path)
+    stats.add(4)
+    stats.add(-1)
+    today = date.today()
+    assert stats.last_days(3)[-1] == (today, 3)
+    assert [count for _, count in stats.last_days(3)][:2] == [0, 0]
+    assert stats.best_day() == 3
+
+    reloaded = Stats(tmp_path)
+    assert reloaded.history[today.isoformat()] == 3
+    assert reloaded.daily_average(3) == 1
+
+
+def test_damaged_history_entries_are_skipped(tmp_path):
+    (tmp_path / "stats.json").write_text(
+        '{"total": 5, "today": 0, "day": "2020-01-01", "history": {"nonsense": 4, "2020-01-01": "x", "2019-12-31": 5}}'
+    )
+    stats = Stats(tmp_path)
+    assert stats.total == 5
+    assert stats.history == {"2019-12-31": 5}

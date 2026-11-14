@@ -4,15 +4,15 @@
 
 # Chest Tracker
 
-**Counts every Fortnite chest you really open, with a clean black-and-white dashboard, an in-game overlay and an optional Discord leaderboard.**
+**Counts every Fortnite chest you really open, with a focused dashboard, a 14-day chart, an in-game overlay and an optional Discord leaderboard.**
 
-<a href="../../releases/latest/download/Chest-Tracker.exe"><img alt="Download for Windows" src="https://img.shields.io/badge/Download-Windows%20.exe-FFFFFF?style=for-the-badge&labelColor=000000"></a>
-<img alt="Windows 10 and 11" src="https://img.shields.io/badge/Windows-10%20%7C%2011-FFFFFF?style=for-the-badge&labelColor=000000">
-<img alt="MIT license" src="https://img.shields.io/badge/License-MIT-FFFFFF?style=for-the-badge&labelColor=000000">
+<a href="../../releases/latest/download/Chest-Tracker.exe"><img alt="Download for Windows" src="https://img.shields.io/badge/Download-Windows%20.exe-D8B46E?style=for-the-badge&labelColor=131519"></a>
+<img alt="Windows 10 and 11" src="https://img.shields.io/badge/Windows-10%20%7C%2011-30343C?style=for-the-badge&labelColor=131519">
+<img alt="MIT license" src="https://img.shields.io/badge/License-MIT-30343C?style=for-the-badge&labelColor=131519">
 
 <br><br>
 
-<img src="docs/images/tracker.png" alt="The Tracker page: all-time chests, today, this session and recent activity" width="90%">
+<img src="docs/images/tracker.png" alt="The Overview page: key figures, a 14-day chart, the live chest and recent activity" width="90%">
 
 </div>
 
@@ -184,6 +184,6 @@ To publish a release, push a tag such as `v1.0.0`. The **Release** workflow buil
 
 [MIT](LICENSE)
 
-Based on the MIT-licensed [Xxoris190/chest-tracker](https://github.com/Xxoris190/chest-tracker) and its fork [benjamin-bryant/chest-tracker](https://github.com/benjamin-bryant/chest-tracker). The original authors keep their copyright; this version adds a redesigned black-and-white interface.
+Based on the MIT-licensed [Xxoris190/chest-tracker](https://github.com/Xxoris190/chest-tracker) and its fork [benjamin-bryant/chest-tracker](https://github.com/benjamin-bryant/chest-tracker). The original authors keep their copyright; this version adds a redesigned interface.
 
 Chest Tracker is an unofficial fan project. It isn't affiliated with, endorsed by, or sponsored by Epic Games. Fortnite is a trademark of Epic Games, Inc.
