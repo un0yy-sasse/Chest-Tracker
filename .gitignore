@@ -1,20 +1,13 @@
-# Private: settings and data from the older version
-.env
-config.json
-pending.json
-chests.db
-templates/
-
-# Build output and tools
-.venv/
-.venv-app/
-build/
+bin/
+obj/
 dist/
-*.spec
-Chest-Tracker.exe
-Chest Tracker.exe
-__pycache__/
-.pytest_cache/
+dist-*/
+*.user
+.vs/
+*.replay
+# debug dumps of the parser (ParseMode.Debug)
+cmds/
 
-# Launch material, not part of the app
-promo/
+# Local tools
+.venv/
+__pycache__/
